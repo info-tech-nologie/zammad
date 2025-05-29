@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  zammad:
+    image: zammad/zammad-docker-compose:latest
+    ports:
+      - "9090:80"  # Expose le port 80 du conteneur sur le port 9090 de la machine hôte
+    depends_on:
+      - postgresql
+      - redis
+      - elasticsearch
+    environment:
+      POSTGRES_HOST: postgresql
+      POSTGRES_USER: zammad
+      POSTGRES_PASS: zammad
+      POSTGRES_DB: zammad_production
+      ELASTICSEARCH_ENABLED: "true"
+      ELASTICSEARCH_HOST: elasticsearch
+      ELASTICSEARCH_PORT: 9200
+      REDIS_URL: redis://redis:6379  # Redirige vers Redis
+
+  postgresql:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_DB: zammad_production
+      POSTGRES_USER: zammad
+      POSTGRES_PASSWORD: zammad
+    volumes:
+      - postgresql-data:/var/lib/postgresql/data  # Persistance des données
+
+  redis:
+    image: redis:6-alpine
+    volumes:
+      - redis-data:/data  # Persistance des données Redis
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.13
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+
+volumes:
+  postgresql-data:
+  redis-data:
+  elasticsearch-data:
