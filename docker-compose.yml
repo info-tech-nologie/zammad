@@ -1,47 +1,126 @@
 version: "3.8"
 
-services:
-  zammad:
-    image: zammad/zammad-docker-compose:latest
-    ports:
-      - "9090:80"  # Expose le port 80 du conteneur sur le port 9090 de la machine hôte
-    depends_on:
-      - postgresql
-      - redis
-      - elasticsearch
-    environment:
-      POSTGRES_HOST: postgresql
-      POSTGRES_USER: zammad
-      POSTGRES_PASS: zammad
-      POSTGRES_DB: zammad_production
-      ELASTICSEARCH_ENABLED: "true"
-      ELASTICSEARCH_HOST: elasticsearch
-      ELASTICSEARCH_PORT: 9200
-      REDIS_URL: redis://redis:6379  # Redirige vers Redis
+# Définition d'un bloc partagé pour réutilisation dans plusieurs services
+x-shared:
+  zammad-service: &zammad-service
+    environment: &zammad-environment
+      # Adresse du serveur memcached utilisé par Zammad
+      MEMCACHE_SERVERS: zammad-memcached:11211
 
-  postgresql:
-    image: postgres:13-alpine
+      # Informations de connexion à la base PostgreSQL
+      POSTGRESQL_DB: zammad_production
+      POSTGRESQL_HOST: zammad-postgresql
+      POSTGRESQL_USER: zammad
+      POSTGRESQL_PASS: zammad
+      POSTGRESQL_PORT: 5432
+      POSTGRESQL_OPTIONS: "?pool=50"  # Pool de connexions PostgreSQL
+
+      # URL du serveur Redis
+      REDIS_URL: redis://zammad-redis:6379
+
+      # Configuration des sauvegardes
+      BACKUP_DIR: "/var/tmp/zammad"
+      BACKUP_TIME: "03:00"
+      HOLD_DAYS: "10"
+
+      # Fuseau horaire
+      TZ: "Europe/Berlin"
+
+      # Configuration Elasticsearch
+      ELASTICSEARCH_SCHEMA: http
+      ELASTICSEARCH_HOST: zammad-elasticsearch
+      ELASTICSEARCH_PORT: 9200
+      ELASTICSEARCH_USER: elastic
+      ELASTICSEARCH_PASS: zammad
+      ELASTICSEARCH_NAMESPACE: zammad
+      ELASTICSEARCH_REINDEX: "true"
+
+      # Configuration NGINX
+      NGINX_PORT: 8080
+      NGINX_CLIENT_MAX_BODY_SIZE: 50M
+
+    # Image officielle Zammad
+    image: ghcr.io/zammad/zammad:6.5.0-75
+
+    restart: always
+
+    # Montage du volume de stockage
+    volumes:
+      - zammad-storage:/opt/zammad/storage
+
+    # Dépendances de services requis
+    depends_on:
+      - zammad-memcached
+      - zammad-postgresql
+      - zammad-redis
+
+services:
+  # Service Elasticsearch utilisé pour la recherche plein texte
+  zammad-elasticsearch:
+    image: bitnami/elasticsearch:8.18.0
+    restart: always
+    volumes:
+      - elasticsearch-data:/bitnami/elasticsearch/data
+    environment:
+      ELASTICSEARCH_ENABLE_SECURITY: 'true'
+      ELASTICSEARCH_SKIP_TRANSPORT_TLS: 'true'
+      ELASTICSEARCH_ENABLE_REST_TLS: 'false'
+      ELASTICSEARCH_PASSWORD: zammad
+
+  # Service memcached utilisé pour la mise en cache
+  zammad-memcached:
+    command: memcached -m 256M
+    image: memcached:1.6.38-alpine
+    restart: always
+
+  # Service d'initialisation de la base de données et configuration initiale
+  zammad-init:
+    <<: *zammad-service
+    command: ["zammad-init"]
+    depends_on:
+      - zammad-postgresql
+    restart: on-failure
+    user: 0:0  # Lancement en tant que root (utile pour certaines opérations d'init)
+
+  # Service NGINX servant l'application sur le port 8080
+  zammad-nginx:
+    <<: *zammad-service
+    command: ["zammad-nginx"]
+    ports:
+      - "8080:8080"  # Expose le port NGINX en dehors du conteneur
+    depends_on:
+      - zammad-railsserver
+
+  # Base de données PostgreSQL
+  zammad-postgresql:
+    image: postgres:17.5-alpine
+    restart: always
     environment:
       POSTGRES_DB: zammad_production
       POSTGRES_USER: zammad
       POSTGRES_PASSWORD: zammad
     volumes:
-      - postgresql-data:/var/lib/postgresql/data  # Persistance des données
+      - postgresql-data:/var/lib/postgresql/data
 
-  redis:
-    image: redis:6-alpine
+  # Serveur Rails principal de Zammad
+  zammad-railsserver:
+    <<: *zammad-service
+    command: ["zammad-railsserver"]
+
+  # Serveur Redis pour gestion des sessions et des files de messages
+  zammad-redis:
+    image: redis:7.4.3-alpine
+    restart: always
     volumes:
-      - redis-data:/data  # Persistance des données Redis
+      - redis-data:/data
 
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.13
-    environment:
-      discovery.type: single-node
-      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
-    volumes:
-      - elasticsearch-data:/usr/share/elasticsearch/data
-
+# Déclaration des volumes persistants
 volumes:
-  postgresql-data:
-  redis-data:
   elasticsearch-data:
+    driver: local
+  postgresql-data:
+    driver: local
+  redis-data:
+    driver: local
+  zammad-storage:
+    driver: local
