@@ -2,8 +2,8 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   labels:
-    io.kompose.service: redis-data
-  name: redis-data
+    io.kompose.service: elasticsearch-data
+  name: elasticsearch-data
 spec:
   accessModes:
     - ReadWriteOnce

@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.yml -o kubernetes/
+    kompose.version: 1.36.0 (ae2a39403)
+  labels:
+    io.kompose.service: zammad-memcached
+  name: zammad-memcached
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: zammad-memcached
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o kubernetes/
+        kompose.version: 1.36.0 (ae2a39403)
+      labels:
+        io.kompose.service: zammad-memcached
+    spec:
+      containers:
+        - args:
+            - memcached
+            - -m
+            - 256M
+          image: memcached:1.6.38-alpine
+          name: zammad-memcached
+      restartPolicy: Always
