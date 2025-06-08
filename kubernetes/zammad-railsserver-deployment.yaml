@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+# apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
@@ -23,8 +23,10 @@ spec:
         io.kompose.service: zammad-railsserver
     spec:
       containers:
-        - args:
-            - zammad-railsserver
+        - name: zammad-railsserver
+          image: ghcr.io/zammad/zammad:6.5.0-75
+          command: ["rails"]
+          args: ["server", "-b", "0.0.0.0", "-p", "3000"]
           env:
             - name: BACKUP_DIR
               value: /var/tmp/zammad
@@ -68,8 +70,6 @@ spec:
               value: redis://zammad-redis:6379
             - name: TZ
               value: Europe/Berlin
-          image: ghcr.io/zammad/zammad:6.5.0-75
-          name: zammad-railsserver
           volumeMounts:
             - mountPath: /opt/zammad/storage
               name: zammad-storage
