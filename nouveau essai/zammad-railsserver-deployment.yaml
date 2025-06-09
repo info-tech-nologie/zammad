@@ -8,6 +8,11 @@ spec:
   selector:
     matchLabels:
       app: zammad-railsserver
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
   template:
     metadata:
       labels:
@@ -18,13 +23,13 @@ spec:
           image: ghcr.io/zammad/zammad:6.5.0-75
           env:
             - name: POSTGRESQL_DB
-              value: zammad_production
+              value: "zammad_production"
             - name: POSTGRESQL_HOST
-              value: zammad-postgresql
+              value: "zammad-postgresql"
             - name: POSTGRESQL_USER
-              value: zammad
+              value: "zammad"
             - name: POSTGRESQL_PASS
-              value: zammad
+              value: "zammad"
             - name: POSTGRESQL_PORT
               value: "5432"
             - name: ELASTICSEARCH_HOST
@@ -46,6 +51,7 @@ spec:
           volumeMounts:
             - mountPath: /opt/zammad/storage
               name: zammad-storage
+      restartPolicy: Always
       volumes:
         - name: zammad-storage
           persistentVolumeClaim:
