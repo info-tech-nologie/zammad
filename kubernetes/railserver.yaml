@@ -20,7 +20,7 @@ spec:
         - name: railsserver
           image: ghcr.io/zammad/zammad:6.5.0-75
           ports:
-            - containerPort: 3000  # Assure-toi que Rails écoute sur ce port
+            - containerPort: 3000
           env:
             - name: MEMCACHE_SERVERS
               value: "zammad-memcached:11211"
@@ -46,8 +46,35 @@ spec:
               value: "8080"
           volumeMounts:
             - name: zammad-storage
-              mountPath: /opt/zammad/storage  # Où les données de Zammad seront stockées
+              mountPath: /opt/zammad/storage
       volumes:
         - name: zammad-storage
           persistentVolumeClaim:
-            claimName: zammad-storage-pvc  # Référence à ton PVC pour le stockage persistant
+            claimName: zammad-storage-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zammad-railsserver
+spec:
+  selector:
+    app: zammad
+    component: railsserver
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: LoadBalancer
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zammad-storage-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
