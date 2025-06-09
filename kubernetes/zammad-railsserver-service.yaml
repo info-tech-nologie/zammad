@@ -8,5 +8,5 @@ spec:
     app: zammad-railsserver
   ports:
   - protocol: TCP
-    port: 3001        # The port that nginx expects to connect to
-    targetPort: 3001  # The port the pod listens on
+    port: 9080        # The port that nginx expects to connect to
+    targetPort: 9080  # The port the pod listens on
