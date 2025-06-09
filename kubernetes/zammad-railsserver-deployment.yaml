@@ -51,7 +51,7 @@ spec:
             - name: NGINX_CLIENT_MAX_BODY_SIZE
               value: 50M
             - name: NGINX_PORT
-              value: "9080"
+              value: "8080"
             - name: POSTGRESQL_DB
               value: zammad_production
             - name: POSTGRESQL_HOST
