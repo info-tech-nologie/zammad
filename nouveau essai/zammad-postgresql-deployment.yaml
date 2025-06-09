@@ -18,11 +18,11 @@ spec:
           image: postgres:17.5-alpine
           env:
             - name: POSTGRES_DB
-              value: zammad_production
+              value: "zammad_production"
             - name: POSTGRES_USER
-              value: zammad
+              value: "zammad"
             - name: POSTGRES_PASSWORD
-              value: zammad
+              value: "zammad"
           volumeMounts:
             - mountPath: /var/lib/postgresql/data
               name: postgresql-data
