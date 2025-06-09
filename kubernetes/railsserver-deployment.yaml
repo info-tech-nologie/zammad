@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zammad-railsserver
+  labels:
+    app: zammad
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zammad
+      component: railsserver
+  template:
+    metadata:
+      labels:
+        app: zammad
+        component: railsserver
+    spec:
+      containers:
+        - name: railsserver
+          image: ghcr.io/zammad/zammad:6.5.0-75
+          ports:
+            - containerPort: 3000  # Assure-toi que Rails écoute sur ce port
+          env:
+            - name: MEMCACHE_SERVERS
+              value: "zammad-memcached:11211"
+            - name: POSTGRESQL_DB
+              value: "zammad_production"
+            - name: POSTGRESQL_HOST
+              value: "zammad-postgresql"
+            - name: POSTGRESQL_USER
+              value: "zammad"
+            - name: POSTGRESQL_PASS
+              value: "zammad"
+            - name: POSTGRESQL_PORT
+              value: "5432"
+            - name: REDIS_URL
+              value: "redis://zammad-redis:6379"
+            - name: ELASTICSEARCH_HOST
+              value: "zammad-elasticsearch"
+            - name: ELASTICSEARCH_PORT
+              value: "9200"
+            - name: TZ
+              value: "Europe/Berlin"
+            - name: NGINX_PORT
+              value: "8080"
+          volumeMounts:
+            - name: zammad-storage
+              mountPath: /opt/zammad/storage  # Où les données de Zammad seront stockées
+      volumes:
+        - name: zammad-storage
+          persistentVolumeClaim:
+            claimName: zammad-storage-pvc  # Référence à ton PVC pour le stockage persistant
