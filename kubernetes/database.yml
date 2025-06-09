@@ -1,0 +1,25 @@
+default: &default
+  adapter: postgresql
+  encoding: utf8
+  pool: 50
+
+production:
+  <<: *default
+  host: zammad-postgresql
+  database: zammad_production
+  username: zammad
+  password: zammad
+
+development:
+  <<: *default
+  host: zammad-postgresql
+  database: zammad_development
+  username: zammad
+  password: zammad
+
+test:
+  <<: *default
+  host: zammad-postgresql
+  database: zammad_test
+  username: zammad
+  password: zammad
