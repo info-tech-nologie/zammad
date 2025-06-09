@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zammad-railsserver
+  namespace: zammad
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zammad-railsserver
+  template:
+    metadata:
+      labels:
+        app: zammad-railsserver
+    spec:
+      containers:
+        - name: zammad-railsserver
+          image: ghcr.io/zammad/zammad:6.5.0-75
+          env:
+            - name: POSTGRESQL_DB
+              value: zammad_production
+            - name: POSTGRESQL_HOST
+              value: zammad-postgresql
+            - name: POSTGRESQL_USER
+              value: zammad
+            - name: POSTGRESQL_PASS
+              value: zammad
+            - name: POSTGRESQL_PORT
+              value: "5432"
+            - name: ELASTICSEARCH_HOST
+              value: zammad-elasticsearch
+            - name: ELASTICSEARCH_PORT
+              value: "9200"
+            - name: ELASTICSEARCH_USER
+              value: elastic
+            - name: ELASTICSEARCH_PASS
+              value: zammad
+            - name: REDIS_URL
+              value: redis://zammad-redis:6379
+            - name: TZ
+              value: Europe/Berlin
+            - name: NGINX_PORT
+              value: "8080"
+            - name: NGINX_CLIENT_MAX_BODY_SIZE
+              value: 50M
+          volumeMounts:
+            - mountPath: /opt/zammad/storage
+              name: zammad-storage
+      volumes:
+        - name: zammad-storage
+          persistentVolumeClaim:
+            claimName: zammad-storage
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zammad-storage
+  namespace: zammad
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi

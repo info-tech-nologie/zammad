@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zammad-elasticsearch
+  namespace: zammad
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zammad-elasticsearch
+  template:
+    metadata:
+      labels:
+        app: zammad-elasticsearch
+    spec:
+      containers:
+        - name: zammad-elasticsearch
+          image: bitnami/elasticsearch:8.18.0
+          env:
+            - name: ELASTICSEARCH_PASSWORD
+              value: zammad
+          volumeMounts:
+            - mountPath: /bitnami/elasticsearch/data
+              name: elasticsearch-data
+      volumes:
+        - name: elasticsearch-data
+          persistentVolumeClaim:
+            claimName: elasticsearch-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elasticsearch-data
+  namespace: zammad
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi

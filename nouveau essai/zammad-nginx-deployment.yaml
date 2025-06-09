@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zammad-nginx
+  namespace: zammad
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zammad-nginx
+  template:
+    metadata:
+      labels:
+        app: zammad-nginx
+    spec:
+      containers:
+        - name: zammad-nginx
+          image: ghcr.io/zammad/zammad:6.5.0-75
+          command: ["zammad-nginx"]
+          ports:
+            - containerPort: 8080
+          env:
+            - name: NGINX_PORT
+              value: "8080"
+            - name: NGINX_CLIENT_MAX_BODY_SIZE
+              value: 50M
+          volumeMounts:
+            - mountPath: /opt/zammad/storage
+              name: zammad-storage
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zammad-nginx
+  namespace: zammad
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30080
+  selector:
+    app: zammad-nginx
