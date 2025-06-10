@@ -7,12 +7,11 @@ metadata:
   labels:
     io.kompose.service: zammad-init
   name: zammad-init
-  command: ["zammad"]
-  args: ["run", "rails", "rake", "zammad:setup"]
 spec:
   containers:
     - args:
-        - zammad-init
+         command: ["zammad"]
+         args: ["run", "rails", "rake", "zammad:setup"]
       env:
         - name: BACKUP_DIR
           value: /var/tmp/zammad
