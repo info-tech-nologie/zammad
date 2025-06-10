@@ -51,7 +51,7 @@ spec:
             - name: NGINX_CLIENT_MAX_BODY_SIZE
               value: 50M
             - name: NGINX_PORT
-              value: "8080"
+              value: "8081"
             - name: POSTGRESQL_DB
               value: zammad_production
             - name: POSTGRESQL_HOST
@@ -71,7 +71,7 @@ spec:
           image: ghcr.io/zammad/zammad:6.5.0-75
           name: zammad-nginx
           ports:
-            - containerPort: 8080
+            - containerPort: 8081
               protocol: TCP
           volumeMounts:
             - mountPath: /opt/zammad/storage
