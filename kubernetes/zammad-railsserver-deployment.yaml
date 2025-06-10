@@ -25,8 +25,6 @@ spec:
       containers:
         - name: zammad-railsserver
           image: ghcr.io/zammad/zammad:6.5.0-75
-          command: ["zammad"]
-          args: ["run", "railsserver"]
           ports:
             - containerPort: 3000
           env:
