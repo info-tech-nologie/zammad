@@ -6,7 +6,7 @@ metadata:
     kompose.version: 1.36.0 (ae2a39403)
   labels:
     io.kompose.service: zammad-init
-  # name: zammad-init
+  name: zammad-init
   command: ["zammad"]
   args: ["run", "rails", "rake", "zammad:setup"]
 spec:
