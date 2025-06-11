@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zammad-memcached
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zammad-memcached
+  template:
+    metadata:
+      labels:
+        app: zammad-memcached
+    spec:
+      containers:
+        - name: memcached
+          image: memcached:1.6.38-alpine
+          args: ["memcached", "-m", "256M"]

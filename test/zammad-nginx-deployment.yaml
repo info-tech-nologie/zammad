@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zammad-nginx
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zammad-nginx
+  template:
+    metadata:
+      labels:
+        app: zammad-nginx
+    spec:
+      containers:
+        - name: nginx
+          image: ghcr.io/zammad/zammad:6.5.0-75
+          envFrom:
+            - configMapRef:
+                name: zammad-config
+          command: ["zammad-nginx"]
+          ports:
+            - containerPort: 8080

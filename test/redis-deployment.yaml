@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zammad-redis
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zammad-redis
+  template:
+    metadata:
+      labels:
+        app: zammad-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7.4.3-alpine
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+      volumes:
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: redis-data

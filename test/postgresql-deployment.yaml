@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zammad-postgresql
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zammad-postgresql
+  template:
+    metadata:
+      labels:
+        app: zammad-postgresql
+    spec:
+      containers:
+        - name: postgresql
+          image: postgres:17.5-alpine
+          env:
+            - name: POSTGRES_DB
+              value: zammad_production
+            - name: POSTGRES_USER
+              value: zammad
+            - name: POSTGRES_PASSWORD
+              value: zammad
+          volumeMounts:
+            - name: postgresql-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgresql-data
+          persistentVolumeClaim:
+            claimName: postgresql-data

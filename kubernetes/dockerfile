@@ -1,0 +1,18 @@
+FROM ruby:3.2
+
+WORKDIR /app
+
+# Installe les dépendances système
+RUN apt-get update -qq && apt-get install -y nodejs yarn sqlite3
+
+# Copie les fichiers nécessaires
+COPY . .
+
+# Installe les gems
+RUN bundle install
+
+# Expose le port Rails
+EXPOSE 3000
+
+# Commande pour démarrer le serveur Rails
+CMD ["rails", "server", "-b", "0.0.0.0"]
