@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.yml -o K8S-compose/
+    kompose.version: 1.36.0 (ae2a39403)
+  labels:
+    io.kompose.service: zammad-railsserver
+  name: zammad-railsserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: zammad-railsserver
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o K8S-compose/
+        kompose.version: 1.36.0 (ae2a39403)
+      labels:
+        io.kompose.service: zammad-railsserver
+    spec:
+      containers:
+        - args:
+            - zammad-railsserver
+          env:
+            - name: BACKUP_DIR
+              value: /var/tmp/zammad
+            - name: BACKUP_TIME
+              value: "03:00"
+            - name: ELASTICSEARCH_HOST
+              value: zammad-elasticsearch
+            - name: ELASTICSEARCH_NAMESPACE
+              value: zammad
+            - name: ELASTICSEARCH_PASS
+              value: zammad
+            - name: ELASTICSEARCH_PORT
+              value: "9200"
+            - name: ELASTICSEARCH_REINDEX
+              value: "true"
+            - name: ELASTICSEARCH_SCHEMA
+              value: http
+            - name: ELASTICSEARCH_USER
+              value: elastic
+            - name: HOLD_DAYS
+              value: "10"
+            - name: MEMCACHE_SERVERS
+              value: zammad-memcached:11211
+            - name: NGINX_CLIENT_MAX_BODY_SIZE
+              value: 50M
+            - name: NGINX_PORT
+              value: "8080"
+            - name: POSTGRESQL_DB
+              value: zammad_production
+            - name: POSTGRESQL_HOST
+              value: zammad-postgresql
+            - name: POSTGRESQL_OPTIONS
+              value: ?pool=50
+            - name: POSTGRESQL_PASS
+              value: zammad
+            - name: POSTGRESQL_PORT
+              value: "5432"
+            - name: POSTGRESQL_USER
+              value: zammad
+            - name: REDIS_URL
+              value: redis://zammad-redis:6379
+            - name: TZ
+              value: Europe/Berlin
+          image: ghcr.io/zammad/zammad:6.5.0-75
+          name: zammad-railsserver
+          volumeMounts:
+            - mountPath: /opt/zammad/storage
+              name: zammad-storage
+      restartPolicy: Always
+      volumes:
+        - name: zammad-storage
+          persistentVolumeClaim:
+            claimName: zammad-storage

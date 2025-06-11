@@ -1,0 +1,308 @@
+# Persistent Volume Claims
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elasticsearch-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgresql-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zammad-storage-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+
+# ConfigMap pour la configuration database.yml de Zammad
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zammad-database-config
+data:
+  database.yml: |
+    default: &default
+      adapter: postgresql
+      encoding: utf8
+      pool: 50
+
+    production:
+      <<: *default
+      host: zammad-postgresql
+      database: zammad_production
+      username: zammad
+      password: zammad
+
+    development:
+      <<: *default
+      host: zammad-postgresql
+      database: zammad_development
+      username: zammad
+      password: zammad
+
+    test:
+      <<: *default
+      host: zammad-postgresql
+      database: zammad_test
+      username: zammad
+      password: zammad
+
+# Elasticsearch Deployment & Service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zammad-elasticsearch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zammad-elasticsearch
+  template:
+    metadata:
+      labels:
+        app: zammad-elasticsearch
+    spec:
+      containers:
+        - name: elasticsearch
+          image: bitnami/elasticsearch:8.18.0
+          env:
+            - name: ELASTICSEARCH_ENABLE_SECURITY
+              value: 'true'
+            - name: ELASTICSEARCH_SKIP_TRANSPORT_TLS
+              value: 'true'
+            - name: ELASTICSEARCH_ENABLE_REST_TLS
+              value: 'false'
+            - name: ELASTICSEARCH_PASSWORD
+              value: zammad
+          ports:
+            - containerPort: 9200
+          volumeMounts:
+            - name: elasticsearch-data
+              mountPath: /bitnami/elasticsearch/data
+      volumes:
+        - name: elasticsearch-data
+          persistentVolumeClaim:
+            claimName: elasticsearch-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zammad-elasticsearch
+spec:
+  ports:
+    - port: 9200
+      targetPort: 9200
+  selector:
+    app: zammad-elasticsearch
+
+# Memcached Deployment & Service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zammad-memcached
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zammad-memcached
+  template:
+    metadata:
+      labels:
+        app: zammad-memcached
+    spec:
+      containers:
+        - name: memcached
+          image: memcached:1.6.38-alpine
+          args: ["memcached", "-m", "256M"]
+          ports:
+            - containerPort: 11211
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zammad-memcached
+spec:
+  ports:
+    - port: 11211
+      targetPort: 11211
+  selector:
+    app: zammad-memcached
+
+# PostgreSQL Deployment & Service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zammad-postgresql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zammad-postgresql
+  template:
+    metadata:
+      labels:
+        app: zammad-postgresql
+    spec:
+      containers:
+        - name: postgresql
+          image: postgres:17.5-alpine
+          env:
+            - name: POSTGRES_DB
+              value: zammad_production
+            - name: POSTGRES_USER
+              value: zammad
+            - name: POSTGRES_PASSWORD
+              value: zammad
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgresql-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgresql-data
+          persistentVolumeClaim:
+            claimName: postgresql-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zammad-postgresql
+spec:
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    app: zammad-postgresql
+
+# Redis Deployment & Service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zammad-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zammad-redis
+  template:
+    metadata:
+      labels:
+        app: zammad-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7.4.3-alpine
+          ports:
+            - containerPort: 6379
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+      volumes:
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: redis-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zammad-redis
+spec:
+  ports:
+    - port: 6379
+      targetPort: 6379
+  selector:
+    app: zammad-redis
+
+# Deployment Zammad + Service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zammad
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zammad
+  template:
+    metadata:
+      labels:
+        app: zammad
+    spec:
+      containers:
+        - name: zammad
+          image: ghcr.io/zammad/zammad:6.5.0-75
+          envFrom:
+            - configMapRef:
+                name: zammad-config
+          ports:
+            - containerPort: 3000   # Rails
+            - containerPort: 8080   # Nginx
+          volumeMounts:
+            - name: zammad-storage
+              mountPath: /opt/zammad/storage
+            - name: database-config
+              mountPath: /opt/zammad/config/database.yml
+              subPath: database.yml
+      volumes:
+        - name: zammad-storage
+          persistentVolumeClaim:
+            claimName: zammad-storage-pvc
+        - name: database-config
+          configMap:
+            name: zammad-database-config
+            items:
+              - key: database.yml
+                path: database.yml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zammad
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 8080
+      targetPort: 8080
+    - port: 3000
+      targetPort: 3000
+  selector:
+    app: zammad

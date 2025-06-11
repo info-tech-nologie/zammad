@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zammad-config
+data:
+  database.yml: |
+    production:
+      adapter: postgresql
+      encoding: unicode
+      database: zammad
+      username: zammad
+      password: zammad
+      host: localhost
+      port: 5432
