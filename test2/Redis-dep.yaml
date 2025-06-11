@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: zammad-redis
-  namespace: default
 spec:
   replicas: 1
   selector:
@@ -16,10 +15,23 @@ spec:
       containers:
         - name: redis
           image: redis:7.4.3-alpine
+          ports:
+            - containerPort: 6379
           volumeMounts:
             - name: redis-data
               mountPath: /data
       volumes:
         - name: redis-data
           persistentVolumeClaim:
-            claimName: redis-data
+            claimName: redis-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zammad-redis
+spec:
+  ports:
+    - port: 6379
+      targetPort: 6379
+  selector:
+    app: zammad-redis

@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: zammad-railsserver
-  namespace: default
 spec:
   replicas: 1
   selector:
@@ -14,9 +13,7 @@ spec:
         app: zammad-railsserver
     spec:
       containers:
-        - name: zammad-railsserver
-          image: ghcr.io/zammad/zammad:6.5.0-75
-          envFrom:
-            - configMapRef:
-                name: zammad-config
-          command: ["zammad-railsserver"]
+      - name: railsserver
+        image: zammad/zammad:latest
+        ports:
+        - containerPort: 3000

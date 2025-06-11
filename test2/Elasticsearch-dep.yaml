@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: zammad-elasticsearch
-  namespace: default
 spec:
   replicas: 1
   selector:
@@ -18,13 +17,13 @@ spec:
           image: bitnami/elasticsearch:8.18.0
           env:
             - name: ELASTICSEARCH_ENABLE_SECURITY
-              value: "true"
+              value: 'true'
             - name: ELASTICSEARCH_SKIP_TRANSPORT_TLS
-              value: "true"
+              value: 'true'
             - name: ELASTICSEARCH_ENABLE_REST_TLS
-              value: "false"
+              value: 'false'
             - name: ELASTICSEARCH_PASSWORD
-              value: "zammad"
+              value: zammad
           ports:
             - containerPort: 9200
           volumeMounts:
@@ -33,4 +32,15 @@ spec:
       volumes:
         - name: elasticsearch-data
           persistentVolumeClaim:
-            claimName: elasticsearch-data
+            claimName: elasticsearch-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zammad-elasticsearch
+spec:
+  ports:
+    - port: 9200
+      targetPort: 9200
+  selector:
+    app: zammad-elasticsearch

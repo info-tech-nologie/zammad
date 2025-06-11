@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: zammad-postgresql
-  namespace: default
 spec:
   replicas: 1
   selector:
@@ -23,10 +22,23 @@ spec:
               value: zammad
             - name: POSTGRES_PASSWORD
               value: zammad
+          ports:
+            - containerPort: 5432
           volumeMounts:
             - name: postgresql-data
               mountPath: /var/lib/postgresql/data
       volumes:
         - name: postgresql-data
           persistentVolumeClaim:
-            claimName: postgresql-data
+            claimName: postgresql-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zammad-postgresql
+spec:
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    app: zammad-postgresql
