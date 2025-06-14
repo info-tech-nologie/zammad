@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        REGISTRY = 'your-dockerhub-username'
+        REGISTRY = 'mohamedalirezgui'
         IMAGE_NAME = 'zammad-custom'
         IMAGE_TAG = 'latest'
         IMAGE_FULL_NAME = "${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
